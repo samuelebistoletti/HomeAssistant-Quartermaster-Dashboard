@@ -1,0 +1,88 @@
+name: Tag and Release on package.json version change
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'package.json'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Compare the version with the previous commit
+        run: |
+          VERSION=$(jq -r '.version' package.json)
+          PREVIOUS=$(git show "${{ github.event.before }}:package.json" 2>/dev/null | jq -r '.version' || true)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          # Release only when the version actually changed. 0.0.0 is the
+          # pre-release placeholder and is never published.
+          if [[ "$VERSION" != "$PREVIOUS" && "$VERSION" != "0.0.0" ]] && ! git rev-parse "v${VERSION}" >/dev/null 2>&1; then
+            echo "RELEASE=true" >> $GITHUB_ENV
+          else
+            echo "RELEASE=false" >> $GITHUB_ENV
+          fi
+          if [[ "$VERSION" =~ -(alpha|beta|rc) ]]; then
+            echo "PRERELEASE=true" >> $GITHUB_ENV
+          else
+            echo "PRERELEASE=false" >> $GITHUB_ENV
+          fi
+
+      - uses: actions/setup-node@v7
+        if: env.RELEASE == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Lint, test and build
+        if: env.RELEASE == 'true'
+        run: |
+          npm ci
+          npm run lint
+          npm test
+          npm run build
+          git diff --exit-code -- dist/
+
+      - name: Prepare release notes from changelog
+        if: env.RELEASE == 'true'
+        run: |
+          python3 <<'PY'
+          import os
+          import pathlib
+          import re
+          import sys
+
+          version = os.environ["VERSION"]
+          text = pathlib.Path("CHANGELOG.md").read_text(encoding="utf-8")
+          pattern = rf"^## \[{re.escape(version)}\].*?(?=^## \[|\Z)"
+          match = re.search(pattern, text, flags=re.MULTILINE | re.DOTALL)
+          if not match:
+              sys.exit(f"Release notes for version {version} not found in CHANGELOG.md")
+          pathlib.Path("release_body.md").write_text(match.group(0).strip(), encoding="utf-8")
+          PY
+
+      - name: Create tag and push
+        if: env.RELEASE == 'true'
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git tag "v${VERSION}"
+          git push origin "v${VERSION}"
+
+      - name: Create GitHub Release
+        if: env.RELEASE == 'true'
+        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3  # v3.0.4
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: v${{ env.VERSION }}
+          body_path: release_body.md
+          prerelease: ${{ env.PRERELEASE }}
+          make_latest: ${{ env.PRERELEASE == 'true' && 'false' || 'true' }}
+          files: dist/quartermaster-dashboard.js

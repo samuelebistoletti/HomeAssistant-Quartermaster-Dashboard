@@ -1,0 +1,37 @@
+{
+  "name": "quartermaster-dashboard",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Dashboard strategy and cards for the Quartermaster Home Assistant integration.",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samuelebistoletti/HomeAssistant-Quartermaster-Dashboard.git"
+  },
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -c --watch",
+    "lint": "eslint . && tsc --noEmit",
+    "test": "web-test-runner"
+  },
+  "dependencies": {
+    "lit": "3.3.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@open-wc/testing": "5.0.0",
+    "@rollup/plugin-node-resolve": "16.0.3",
+    "@rollup/plugin-terser": "1.0.2",
+    "@rollup/plugin-typescript": "12.3.1",
+    "@types/mocha": "10.0.10",
+    "@web/dev-server-esbuild": "2.0.0",
+    "@web/test-runner": "1.0.0",
+    "eslint": "10.14.0",
+    "globals": "17.14.0",
+    "rollup": "4.68.0",
+    "tslib": "2.9.1",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1"
+  }
+}

@@ -1,0 +1,9 @@
+node_modules/
+coverage/
+*.log
+.DS_Store
+.vscode
+*.local.md
+.claude/
+CLAUDE.local.md
+release_body.md
