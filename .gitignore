@@ -1,8 +1,13 @@
 node_modules/
 coverage/
 *.log
+*.tgz
+.eslintcache
+.env
+.env.*
 .DS_Store
 .vscode
+.idea/
 *.local.md
 .claude/
 CLAUDE.local.md

@@ -30,6 +30,8 @@ npm run build     # Rollup -> dist/quartermaster-dashboard.js, committed
 - Writes go through the integration's actions; reads through its entities and websocket commands.
 - `dist/` must match the sources: run `npm run build` and commit it.
 - Dependencies are pinned with the lockfile; no runtime dependency beyond Lit without asking.
+- Always the latest stable version of everything (npm packages, Node, GitHub Actions, Home Assistant). Adopt new majors instead of pinning back; TypeScript 7 runs `tsc` while tools that need the compiler API use `@typescript/typescript6`, as the TypeScript 7.0 announcement recommends.
+- After every push wait for all GitHub Actions runs of the commit and fix any failure at once.
 
 ## Release
 
