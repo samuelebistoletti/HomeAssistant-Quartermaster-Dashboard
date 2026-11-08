@@ -146,6 +146,16 @@ export class Localizer {
         return this.t("reason_finished_recently", {
           date: suggestion.date ? this.date(suggestion.date) : "",
         });
+      case "running_out": {
+        const pace =
+          typeof suggestion.per_day === "number" && suggestion.per_day > 0
+            ? this.t("running_out_pace", { per_day: this.number(suggestion.per_day) })
+            : "";
+        const days = Math.max(0, Math.ceil(suggestion.days_left ?? 0));
+        return days === 0
+          ? this.t("reason_running_out_today", { pace })
+          : this.plural("reason_running_out", days, { pace, days: this.number(days) });
+      }
       default:
         return this.t("reason_unknown");
     }

@@ -23,6 +23,7 @@ export const CARD = {
   history: "quartermaster-history-card",
   zone: "quartermaster-zone-card",
   photo: "quartermaster-photo-card",
+  zones: "quartermaster-zones-card",
 } as const;
 
 /** The parts of `hass` the strategy reads. */
@@ -142,7 +143,7 @@ export function buildViews(snapshot: Snapshot, l: Localizer): ViewConfig[] {
 
   // Overview: counts as native tiles, a tap opens the matching view.
   const tile = (
-    key: "to_buy" | "suggestions" | "expiring" | "pending_proposals",
+    key: "to_buy" | "suggestions" | "expiring" | "pending_proposals" | "photo_requests",
     target: ViewPath,
   ): CardConfig[] => {
     const id = entity(key);
@@ -163,8 +164,24 @@ export function buildViews(snapshot: Snapshot, l: Localizer): ViewConfig[] {
     ...tile("to_buy", "shopping"),
     ...tile("suggestions", "shopping"),
     ...tile("expiring", "expiry"),
+    ...tile("photo_requests", "zones"),
     ...tile("pending_proposals", "proposals"),
   ];
+  // AI usage: analyses (the integration has no cost data), with the daily limit.
+  const analyses = entity("analyses_today");
+  if (analyses) {
+    const limit = snapshot.daily_analysis_limit;
+    overviewCards.push({
+      type: "tile",
+      entity: analyses,
+      name:
+        typeof limit === "number"
+          ? l.t("tile_analyses_limit", { limit: l.number(limit) })
+          : l.t("tile_analyses"),
+      icon: "mdi:image-search-outline",
+      grid_options: { columns: 6 },
+    });
+  }
   const startShopping = entity("start_shopping");
   if (startShopping && snapshot.can_write) {
     overviewCards.push({
@@ -198,6 +215,10 @@ export function buildViews(snapshot: Snapshot, l: Localizer): ViewConfig[] {
       ...(snapshot.can_write ? [custom(CARD.photo, { zone: zone.zone_id })] : []),
     ],
   }));
+  // Zones are created, edited and removed from the dashboard by writers.
+  const zoneManagement: SectionConfig[] = snapshot.can_write
+    ? [{ type: "grid", cards: [custom(CARD.zones)] }]
+    : [];
 
   const inventorySections: SectionConfig[] = zones.length
     ? zones.map((zone) => ({
@@ -222,7 +243,10 @@ export function buildViews(snapshot: Snapshot, l: Localizer): ViewConfig[] {
     view("essentials", l.t("view_essentials"), [
       { type: "grid", cards: [custom(CARD.essentials)] },
     ]),
-    view("zones", l.t("view_zones"), zones.length ? zoneSections : [noZones]),
+    view("zones", l.t("view_zones"), [
+      ...(zones.length ? zoneSections : [noZones]),
+      ...zoneManagement,
+    ]),
     view("proposals", l.t("view_proposals"), [{ type: "grid", cards: [custom(CARD.proposals)] }]),
     view("inventory", l.t("view_inventory"), inventorySections),
     view("expiry", l.t("view_expiry"), expirySections),

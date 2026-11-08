@@ -102,6 +102,7 @@ export class QuartermasterProposalsCard extends QuartermasterCard {
     const included = !choice.excluded.has(item.key);
     const correcting = choice.correcting.has(item.key);
     const name = item.product ?? this.l.t("unknown_product", { seen: item.seen_as });
+    const purchase = proposal.kind === "purchase";
     const before = item.current === null ? "–" : this.l.number(item.current);
     const prefix = `p${proposal.proposal_id}-k${item.key}`;
     const products = [...snapshot.products].sort((a, b) =>
@@ -116,7 +117,9 @@ export class QuartermasterProposalsCard extends QuartermasterCard {
         <div class="grow">
           <div class="name">${name}</div>
           <div class="secondary">
-            ${before} → ${this.amount(item.proposed, item.unit)}
+            ${purchase
+              ? this.l.t("bought", { amount: this.amount(item.proposed, item.unit) })
+              : `${before} → ${this.amount(item.proposed, item.unit)}`}
             · ${this.l.t("confidence", { percent: this.l.percent(item.confidence) })}
             ${item.product && item.seen_as && item.seen_as !== item.product
               ? html`· ${this.l.t("seen_as", { seen: item.seen_as })}`
@@ -158,14 +161,25 @@ export class QuartermasterProposalsCard extends QuartermasterCard {
       return html`<p class="muted">${this.l.t("proposals_empty")}</p>`;
     }
     return html`${snapshot.proposals.map((proposal) => {
+      const time = this.l.relative(proposal.created);
       const zone = proposal.zone_id
         ? this.zoneName(proposal.zone_id)
         : this.l.t("proposal_unknown_zone");
+      const title =
+        proposal.kind === "purchase"
+          ? this.l.t("proposal_purchase", { time })
+          : this.l.t("proposal_from", { zone, time });
+      const image = proposal.has_image
+        ? this.image({ proposal_id: proposal.proposal_id }, "")
+        : undefined;
       const choice = this.choice(proposal.proposal_id);
       const selected = proposal.items.length - choice.excluded.size;
       return html`
         <section data-proposal=${proposal.proposal_id}>
-          <h3>${this.l.t("proposal_from", { zone, time: this.l.relative(proposal.created) })}</h3>
+          <h3>${title}</h3>
+          ${image
+            ? html`<img class="crop" src=${image} alt=${this.l.t("proposal_image_alt")} />`
+            : nothing}
           <ul class="rows">
             ${proposal.items.map((item) => this.renderItem(proposal, item, snapshot))}
           </ul>

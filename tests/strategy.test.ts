@@ -107,8 +107,18 @@ describe("QuartermasterDashboardStrategy", () => {
       snapshot.entities.to_buy,
       snapshot.entities.suggestions,
       snapshot.entities.expiring,
+      snapshot.entities.photo_requests,
       snapshot.entities.pending_proposals,
+      snapshot.entities.analyses_today,
     ]);
+    const analyses = must(overview.find((c) => c.entity === snapshot.entities.analyses_today));
+    expect(analyses.name).to.equal("Analisi AI di oggi (limite 50)");
+    expect(analyses.tap_action).to.equal(undefined);
+    const requests = must(overview.find((c) => c.entity === snapshot.entities.photo_requests));
+    expect(requests.name).to.equal("Foto richieste");
+    expect((requests.tap_action as { navigation_path: string }).navigation_path).to.equal(
+      viewPath("zones"),
+    );
     const button = must(overview.find((c) => c.type === "button"));
     expect(button.entity).to.equal(snapshot.entities.start_shopping);
     expect(button.name).to.equal("Vado a fare la spesa");
@@ -127,6 +137,16 @@ describe("QuartermasterDashboardStrategy", () => {
     expect(action.navigation_path).to.equal(viewPath("shopping"));
   });
 
+  it("labels the AI usage tile without a limit from an older integration", async () => {
+    const snapshot = sampleSnapshot();
+    delete snapshot.daily_analysis_limit;
+    const config = await generate(snapshot);
+    const tile = must(
+      cards(config, "overview").find((c) => c.entity === snapshot.entities.analyses_today),
+    );
+    expect(tile.name).to.equal("AI analyses today");
+  });
+
   it("skips entities that are missing", async () => {
     const config = await generate(
       sampleSnapshot({ entities: { to_buy: "sensor.to_buy", expiry: null } }),
@@ -139,10 +159,11 @@ describe("QuartermasterDashboardStrategy", () => {
     ]);
   });
 
-  it("makes one section per zone, with the photo card for writers", async () => {
+  it("makes one section per zone, with the photo card and zone management for writers", async () => {
     const config = await generate(sampleSnapshot());
     const zones = must(config.views.find((v) => v.path === "zones")).sections;
-    expect(zones).to.have.length(2);
+    expect(zones).to.have.length(3);
+    expect(zones[2].cards).to.deep.equal([{ type: "custom:quartermaster-zones-card" }]);
     expect(zones[0].cards).to.deep.equal([
       { type: "custom:quartermaster-zone-card", zone: "fridge" },
       { type: "custom:quartermaster-photo-card", zone: "fridge" },
@@ -157,11 +178,15 @@ describe("QuartermasterDashboardStrategy", () => {
     expect(cards(config, "zones").some((c) => c.type === "custom:quartermaster-photo-card")).to.equal(
       false,
     );
+    expect(cards(config, "zones").some((c) => c.type === "custom:quartermaster-zones-card")).to.equal(
+      false,
+    );
   });
 
   it("explains how to add the first zone", async () => {
     const config = await generate(sampleSnapshot({ zones: [] }));
     expect(cards(config, "zones")[0].content).to.equal(stringsFor("en").no_zones);
+    expect(cards(config, "zones")[1].type).to.equal("custom:quartermaster-zones-card");
     expect(cards(config, "inventory")).to.deep.equal([{ type: "custom:quartermaster-inventory-card" }]);
   });
 
@@ -199,6 +224,6 @@ describe("registration", () => {
       expect(customElements.get(tag), tag).to.not.equal(undefined);
       expect(window.customCards?.some((c) => c.type === tag), tag).to.equal(true);
     }
-    expect(used.size).to.equal(7);
+    expect(used.size).to.equal(8);
   });
 });

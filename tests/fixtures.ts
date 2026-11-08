@@ -1,8 +1,33 @@
-import type { HomeAssistant, JournalEntry, Snapshot } from "../src/types";
+import type { HomeAssistant, JournalEntry, Snapshot, Zone } from "../src/types";
 
 export const YEAR = new Date().getFullYear();
 
 const daysAgo = (days: number) => new Date(Date.now() - days * 86400000).toISOString();
+
+/** A zone with every field added after API version 1 (camera and camera_show sources). */
+export function shelfZone(overrides: Partial<Zone> = {}): Zone {
+  return {
+    zone_id: "shelf",
+    name: "Scaffale",
+    aliases: ["mensola"],
+    sources: ["camera", "camera_show", "manual"],
+    source_details: [
+      { type: "camera", entity_id: "camera.garage", roi: [0, 0, 0.5, 1], max_age_minutes: 30 },
+      { type: "camera_show", entity_id: "camera.garage", trigger_entity: "binary_sensor.garage_motion", arm_minutes: 10, future_field: "kept" },
+      { type: "manual" },
+    ],
+    check_schedule: "0 19 * * *",
+    reminder_days: null,
+    confidence_threshold: 0.7,
+    has_image: true,
+    updated: daysAgo(1),
+    last_check: { ts: daysAgo(1), status: "updated", reason: null, overall_confidence: 0.82 },
+    in_error: false,
+    show_armed_until: new Date(Date.now() + 600000).toISOString(),
+    last_show: { product: "Pasta", action: "consume", quantity: 1, confidence: 0.9, status: "applied", ts: daysAgo(0.1) },
+    ...overrides,
+  };
+}
 
 /** A sample snapshot as returned by `quartermaster/snapshot` (API 1), Italian entity ids. */
 export function sampleSnapshot(overrides: Partial<Snapshot> = {}): Snapshot {
@@ -20,6 +45,7 @@ export function sampleSnapshot(overrides: Partial<Snapshot> = {}): Snapshot {
       undo_last: "button.quartermaster_annulla_ultimo_movimento",
       update_mode: "select.quartermaster_modalita_aggiornamento",
       expiry: "calendar.quartermaster_scadenze",
+      photo_requests: "sensor.quartermaster_foto_richieste",
     },
     zones: [
       { zone_id: "fridge", name: "Frigo", aliases: [], sources: ["manual"], updated: daysAgo(9) },
@@ -120,8 +146,10 @@ export function sampleSnapshot(overrides: Partial<Snapshot> = {}): Snapshot {
         not_seen: ["Burro"],
       },
     ],
+    photo_requests: [{ request_id: "r1", zone_id: "shelf", reason: "stale", created: daysAgo(0.2) }],
     shopping_mode_until: null,
     analyses_today: 2,
+    daily_analysis_limit: 50,
     can_write: true,
     ...overrides,
   };
@@ -189,6 +217,11 @@ export function stubHass(
     language: options.language ?? "en",
     config: { components: ["quartermaster"] },
     user: { name: "Test", is_admin: snapshot.can_write },
+    states: Object.fromEntries(
+      ["camera.garage", "binary_sensor.garage_motion", "event.doorbell", "notify.phone", "light.ceiling"].map(
+        (entity_id) => [entity_id, { entity_id, state: "on", attributes: { friendly_name: entity_id } }],
+      ),
+    ),
     async callWS<T>(message: Record<string, unknown>): Promise<T> {
       calls.ws.push(message);
       if (options.ws) {

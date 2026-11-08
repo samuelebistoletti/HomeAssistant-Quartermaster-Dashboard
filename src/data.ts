@@ -1,4 +1,11 @@
-import { DOMAIN, type HassConnection, type Snapshot, type Unsubscribe } from "./types";
+import {
+  DOMAIN,
+  type HassConnection,
+  type HomeAssistant,
+  type ImageData,
+  type Snapshot,
+  type Unsubscribe,
+} from "./types";
 
 export type SnapshotListener = (snapshot: Snapshot | undefined, error?: unknown) => void;
 
@@ -59,4 +66,23 @@ export function subscribeSnapshot(
       ?.then((unsub) => unsub?.())
       .catch(() => undefined);
   };
+}
+
+/**
+ * Fetch a stored crop with `quartermaster/image` as a data URL, or
+ * `undefined` when there is none (`not_found`) or it cannot be read.
+ */
+export async function fetchImage(
+  hass: Pick<HomeAssistant, "callWS">,
+  target: { zone_id: string } | { proposal_id: number },
+): Promise<string | undefined> {
+  try {
+    const image = await hass.callWS<ImageData>({ type: `${DOMAIN}/image`, ...target });
+    if (!image?.data) {
+      return undefined;
+    }
+    return `data:${image.content_type || "image/jpeg"};base64,${image.data}`;
+  } catch {
+    return undefined;
+  }
 }

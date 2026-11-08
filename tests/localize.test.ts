@@ -81,6 +81,18 @@ describe("suggestion reasons", () => {
     expect(en_.reason(s)).to.equal("you finished it on November 2");
   });
 
+  it("reads running_out with the pace and the days left", () => {
+    const s = { product_id: 1, have: 2, reason: "running_out", days_left: 3, per_day: 0.5 };
+    expect(it_.reason(s)).to.equal("al ritmo solito (0,5 al giorno) finisce entro 3 giorni");
+    expect(en_.reason(s)).to.equal("at your usual pace (0.5 a day) it runs out within 3 days");
+    expect(en_.reason({ ...s, days_left: 1 })).to.equal(
+      "at your usual pace (0.5 a day) it runs out within 1 day",
+    );
+    expect(it_.reason({ ...s, days_left: 0, per_day: undefined })).to.equal(
+      "al ritmo solito finisce oggi",
+    );
+  });
+
   it("does not fail on a reason it does not know", () => {
     expect(en_.reason({ product_id: 1, have: 0, reason: "new_reason" })).to.equal("suggested");
   });

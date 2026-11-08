@@ -23,6 +23,8 @@ export interface HomeAssistant {
   language: string;
   config: { components: string[] };
   user?: { name?: string; is_admin?: boolean };
+  /** States of all entities, keyed by entity id (used for entity suggestions). */
+  states?: Record<string, HassEntity>;
   callWS<T>(message: { type: string } & Record<string, unknown>): Promise<T>;
   callService(
     domain: string,
@@ -30,6 +32,12 @@ export interface HomeAssistant {
     data?: Record<string, unknown>,
   ): Promise<unknown>;
   connection: HassConnection;
+}
+
+export interface HassEntity {
+  entity_id: string;
+  state: string;
+  attributes: { friendly_name?: string } & Record<string, unknown>;
 }
 
 export type EntityKey =
@@ -42,14 +50,57 @@ export type EntityKey =
   | "start_shopping"
   | "undo_last"
   | "update_mode"
-  | "expiry";
+  | "expiry"
+  | "photo_requests";
 
+/** Source types a zone can have. */
+export type SourceType = "camera" | "camera_show" | "passage" | "manual";
+
+/** One zone source with every field `set_zone` accepts. */
+export type ZoneSource = { type: SourceType | string } & Record<string, unknown>;
+
+export interface ZoneCheck {
+  ts: string;
+  status: "updated" | "photo_requested" | "failed" | string;
+  reason?: string | null;
+  overall_confidence?: number | null;
+}
+
+export interface LastShow {
+  product: string | null;
+  action?: string | null;
+  quantity?: number | null;
+  confidence?: number | null;
+  status?: string | null;
+  ts: string;
+}
+
+/**
+ * A zone. Everything after `updated` was added after version 1 and may be
+ * missing with older integrations.
+ */
 export interface Zone {
   zone_id: string;
   name: string;
   aliases: string[];
   sources: string[];
   updated: string | null;
+  source_details?: ZoneSource[];
+  check_schedule?: string | null;
+  reminder_days?: number | null;
+  confidence_threshold?: number | null;
+  has_image?: boolean;
+  last_check?: ZoneCheck | null;
+  in_error?: boolean;
+  show_armed_until?: string | null;
+  last_show?: LastShow | null;
+}
+
+export interface PhotoRequest {
+  request_id: string | number;
+  zone_id: string;
+  reason?: string | null;
+  created: string;
 }
 
 export interface StockLevel {
@@ -79,7 +130,11 @@ export interface ToBuy {
   quantity: number;
 }
 
-export type SuggestionReason = "below_target" | "stale_zone" | "finished_recently";
+export type SuggestionReason =
+  | "below_target"
+  | "stale_zone"
+  | "finished_recently"
+  | "running_out";
 
 export interface Suggestion {
   product_id: number;
@@ -89,6 +144,8 @@ export interface Suggestion {
   zone?: string;
   days?: number;
   date?: string;
+  days_left?: number;
+  per_day?: number;
 }
 
 export interface Expiring {
@@ -122,9 +179,12 @@ export interface ProposalItem {
 
 export interface Proposal {
   proposal_id: number;
+  /** `count` (photos, cameras) or `purchase` (receipts); missing means count. */
+  kind?: "count" | "purchase" | string;
   zone_id: string | null;
   channel: string;
   created: string;
+  has_image?: boolean;
   items: ProposalItem[];
   not_seen: string[];
 }
@@ -134,6 +194,7 @@ export interface Snapshot {
   entry_id: string;
   entities: Partial<Record<EntityKey, string | null>>;
   zones: Zone[];
+  photo_requests?: PhotoRequest[];
   products: Product[];
   to_buy: ToBuy[];
   suggestions: Suggestion[];
@@ -142,6 +203,7 @@ export interface Snapshot {
   proposals: Proposal[];
   shopping_mode_until: string | null;
   analyses_today: number;
+  daily_analysis_limit?: number;
   can_write: boolean;
 }
 
@@ -170,6 +232,19 @@ export interface PhotoResult {
   proposed: ProposalItem[];
   not_seen: string[];
   unknown: string[];
+}
+
+/** Result of a receipt upload (`kind: "receipt"`). */
+export interface ReceiptResult {
+  proposal_id: number | null;
+  items: ProposalItem[];
+  unknown: string[];
+}
+
+/** Result of `quartermaster/image`. */
+export interface ImageData {
+  content_type: string;
+  data: string;
 }
 
 /** Error shape of a rejected `callWS` or `callService`. */

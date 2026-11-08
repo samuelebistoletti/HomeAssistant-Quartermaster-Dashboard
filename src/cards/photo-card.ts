@@ -2,7 +2,13 @@ import { css, html, nothing } from "lit";
 import { state } from "lit/decorators.js";
 
 import { ImageTooLargeError, ImageUnreadableError, prepareImage } from "../image";
-import { DOMAIN, type PhotoResult, type ProposalItem, type Snapshot } from "../types";
+import {
+  DOMAIN,
+  type PhotoResult,
+  type ProposalItem,
+  type ReceiptResult,
+  type Snapshot,
+} from "../types";
 import { configForm, defineCard, QuartermasterCard, TITLE_FIELD, ZONE_FIELD } from "./base";
 
 export const PHOTO_CARD = "quartermaster-photo-card";
@@ -13,14 +19,20 @@ export function isAndroid(userAgent: string = navigator.userAgent): boolean {
 }
 
 type Phase = "idle" | "preparing" | "analyzing";
+type Kind = "zone" | "receipt";
 
-/** Photo of a zone, resized in the browser and sent to the integration. */
+/**
+ * Photo of a zone or of a receipt, resized in the browser and sent to the
+ * integration.
+ */
 export class QuartermasterPhotoCard extends QuartermasterCard {
   protected readonly titleKey = "card_photo" as const;
 
   @state() private zone?: string;
   @state() private phase: Phase = "idle";
+  @state() private kind: Kind = "zone";
   @state() private result?: PhotoResult;
+  @state() private receipt?: ReceiptResult;
 
   /** Overridable for tests. */
   android = isAndroid();
@@ -46,21 +58,31 @@ export class QuartermasterPhotoCard extends QuartermasterCard {
   private async upload(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
+    const receipt = this.kind === "receipt";
     const zone = this.snapshot ? this.selectedZone(this.snapshot) : undefined;
-    if (!file || !zone || !this.hass) {
+    if (!file || (!zone && !receipt) || !this.hass) {
       return;
     }
     this.notice = undefined;
     this.result = undefined;
+    this.receipt = undefined;
     this.phase = "preparing";
     try {
       const image = await prepareImage(file);
       this.phase = "analyzing";
-      this.result = await this.hass.callWS<PhotoResult>({
-        type: `${DOMAIN}/upload_photo`,
-        zone,
-        image: image.base64,
-      });
+      if (receipt) {
+        this.receipt = await this.hass.callWS<ReceiptResult>({
+          type: `${DOMAIN}/upload_photo`,
+          kind: "receipt",
+          image: image.base64,
+        });
+      } else {
+        this.result = await this.hass.callWS<PhotoResult>({
+          type: `${DOMAIN}/upload_photo`,
+          zone,
+          image: image.base64,
+        });
+      }
     } catch (err) {
       if (err instanceof ImageTooLargeError) {
         this.showError(this.l.t("photo_too_large"));
@@ -79,6 +101,27 @@ export class QuartermasterPhotoCard extends QuartermasterCard {
     const name = item.product ?? this.l.t("unknown_product", { seen: item.seen_as });
     const before = item.current === null ? "–" : this.l.number(item.current);
     return `${name}: ${before} → ${this.amount(item.proposed, item.unit)}`;
+  }
+
+  private renderReceipt(result: ReceiptResult) {
+    const items = result.items ?? [];
+    const unknown = result.unknown ?? [];
+    return html`<div class="result">
+      ${result.proposal_id !== null && items.length
+        ? html`<p>${this.l.plural("receipt_proposal", items.length)}</p>
+            <ul class="rows">
+              ${items.map(
+                (item) => html`<li>
+                  ${item.product ?? this.l.t("unknown_product", { seen: item.seen_as })}:
+                  ${this.amount(item.proposed, item.unit)}
+                </li>`,
+              )}
+            </ul>`
+        : html`<p>${this.l.t("receipt_no_items")}</p>`}
+      ${unknown.length
+        ? html`<p class="secondary">${this.l.t("photo_unknown", { products: this.l.list(unknown) })}</p>`
+        : nothing}
+    </div>`;
   }
 
   private renderResult(result: PhotoResult) {
@@ -121,22 +164,39 @@ export class QuartermasterPhotoCard extends QuartermasterCard {
     if (!this.canWrite) {
       return nothing;
     }
-    if (!snapshot.zones.length) {
-      return html`<p class="muted">${this.l.t("no_zones")}</p>`;
-    }
     const zone = this.selectedZone(snapshot);
     const working = this.phase !== "idle";
+    const receipt = this.kind === "receipt";
+    const kindSelect = html`<label>
+      ${this.l.t("photo_kind")}
+      <select name="kind" ?disabled=${working}
+        @change=${(e: Event) => {
+          this.kind = (e.target as HTMLSelectElement).value as Kind;
+          this.result = undefined;
+          this.receipt = undefined;
+        }}>
+        <option value="zone" ?selected=${!receipt}>${this.l.t("photo_kind_zone")}</option>
+        <option value="receipt" ?selected=${receipt}>${this.l.t("photo_kind_receipt")}</option>
+      </select>
+    </label>`;
+    if (!snapshot.zones.length && !receipt) {
+      return html`<div class="form">${kindSelect}</div>
+        <p class="muted">${this.l.t("no_zones")}</p>`;
+    }
     return html`
       <div class="form">
-        <label>
-          ${this.l.t("photo_zone")}
-          <select name="zone" ?disabled=${working}
-            @change=${(e: Event) => (this.zone = (e.target as HTMLSelectElement).value)}>
-            ${snapshot.zones.map(
-              (z) => html`<option value=${z.zone_id} ?selected=${z.zone_id === zone}>${z.name}</option>`,
-            )}
-          </select>
-        </label>
+        ${kindSelect}
+        ${receipt
+          ? nothing
+          : html`<label>
+              ${this.l.t("photo_zone")}
+              <select name="zone" ?disabled=${working}
+                @change=${(e: Event) => (this.zone = (e.target as HTMLSelectElement).value)}>
+                ${snapshot.zones.map(
+                  (z) => html`<option value=${z.zone_id} ?selected=${z.zone_id === zone}>${z.name}</option>`,
+                )}
+              </select>
+            </label>`}
         <label class="pick ${working ? "disabled" : ""}">
           <span>${this.l.t("photo_choose")}</span>
           <input type="file" accept="image/*" capture="environment" ?disabled=${working}
@@ -150,6 +210,7 @@ export class QuartermasterPhotoCard extends QuartermasterCard {
           </p>`
         : nothing}
       ${this.result && !working ? this.renderResult(this.result) : nothing}
+      ${this.receipt && !working ? this.renderReceipt(this.receipt) : nothing}
     `;
   }
 

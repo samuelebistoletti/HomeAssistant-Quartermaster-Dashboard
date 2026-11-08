@@ -5,6 +5,7 @@ import "./cards/photo-card";
 import "./cards/proposals-card";
 import "./cards/suggestions-card";
 import "./cards/zone-card";
+import "./cards/zones-card";
 
 import { stringsFor } from "./localize";
 import { QuartermasterDashboardStrategy, STRATEGY_TYPE } from "./strategy";

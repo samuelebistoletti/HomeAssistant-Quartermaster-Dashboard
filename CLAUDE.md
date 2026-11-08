@@ -17,7 +17,7 @@ npm run build     # Rollup -> dist/quartermaster-dashboard.js, committed
 
 - `src/quartermaster-dashboard.ts`: entry point; registers the strategy, the cards, `window.customStrategies` and `window.customCards`.
 - `src/strategy.ts`: `generate(config, hass)` builds the views from `quartermaster/snapshot`.
-- `src/cards/`: Lit custom cards (`base.ts` holds the shared subscription, actions and styles); `src/data.ts`: shared `quartermaster/subscribe`; `src/image.ts`: photo resizing.
+- `src/cards/`: Lit custom cards (`base.ts` holds the shared subscription, actions and styles); `src/data.ts`: shared `quartermaster/subscribe` and `quartermaster/image`; `src/image.ts`: photo resizing; `src/sources.ts`: zone source fields for the zone editor.
 - `src/types.ts`: the integration's dashboard API (contract in the integration's `docs/dashboard-api.md`).
 - `src/localize.ts` and `src/translations/`: user-facing strings, plurals, dates and suggestion reasons.
 - `tests/`: Web Test Runner tests. `dist/`: the built bundle (release asset and Marketplace file).

@@ -9,7 +9,7 @@ import {
 } from "lit";
 import { property, state } from "lit/decorators.js";
 
-import { subscribeSnapshot } from "../data";
+import { fetchImage, subscribeSnapshot } from "../data";
 import { Localizer, type StringKey } from "../localize";
 import {
   DOMAIN,
@@ -118,6 +118,8 @@ export abstract class QuartermasterCard extends LitElement {
   private connection?: HassConnection;
   private localizer?: Localizer;
   private localizerLanguage?: string;
+  /** Crops by target and version; `null` while loading or when there is none. */
+  private images = new Map<string, string | null>();
 
   /** Translation key of the default title. */
   protected abstract readonly titleKey: StringKey;
@@ -209,6 +211,26 @@ export abstract class QuartermasterCard extends LitElement {
     } finally {
       this.busy = false;
     }
+  }
+
+  /**
+   * The stored crop of a zone or proposal as a data URL, fetched once per
+   * `version` (for example the time of the last check); `undefined` until
+   * it is loaded or when there is none.
+   */
+  protected image(
+    target: { zone_id: string } | { proposal_id: number },
+    version: string,
+  ): string | undefined {
+    const key = `${JSON.stringify(target)}@${version}`;
+    if (!this.images.has(key) && this.hass) {
+      this.images.set(key, null);
+      void fetchImage(this.hass, target).then((url) => {
+        this.images.set(key, url ?? null);
+        this.requestUpdate();
+      });
+    }
+    return this.images.get(key) ?? undefined;
   }
 
   protected showError(text: string): void {
@@ -433,6 +455,15 @@ export abstract class QuartermasterCard extends LitElement {
     }
     .badge.ok {
       color: var(--success-color, var(--secondary-text-color));
+    }
+    img.crop {
+      display: block;
+      max-width: 100%;
+      max-height: 240px;
+      object-fit: contain;
+      border-radius: 8px;
+      margin-block: 8px;
+      background: var(--secondary-background-color);
     }
     h3 {
       font-size: 1rem;
