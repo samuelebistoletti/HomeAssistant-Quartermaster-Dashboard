@@ -1,3 +1,11 @@
+import "./cards/essentials-card";
+import "./cards/history-card";
+import "./cards/inventory-card";
+import "./cards/photo-card";
+import "./cards/proposals-card";
+import "./cards/suggestions-card";
+import "./cards/zone-card";
+
 import { stringsFor } from "./localize";
 import { QuartermasterDashboardStrategy, STRATEGY_TYPE } from "./strategy";
 
