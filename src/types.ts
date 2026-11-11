@@ -175,6 +175,8 @@ export interface ProposalItem {
   unit: string | null;
   confidence: number;
   notes?: string | null;
+  /** A recorded product the picture did not show, proposed at zero. */
+  missing?: boolean;
 }
 
 export interface Proposal {

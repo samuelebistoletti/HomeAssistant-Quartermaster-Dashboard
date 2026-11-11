@@ -238,6 +238,45 @@ describe("proposals card", () => {
     });
   });
 
+  it("leaves products not seen out unless ticked", async () => {
+    const base = sampleSnapshot();
+    const [proposal] = base.proposals;
+    const missing = {
+      ...proposal.items[0],
+      key: 9,
+      product_id: 2,
+      product: "Caffè",
+      seen_as: "caffè",
+      current: 1,
+      proposed: 0,
+      missing: true,
+    };
+    const stub = stubHass({
+      snapshot: { ...base, proposals: [{ ...proposal, items: [...proposal.items, missing] }] },
+    });
+    const el = await mount("quartermaster-proposals-card", stub);
+    expect(text(el)).to.contain("Not seen: set to zero only if ticked");
+    const box = $<HTMLInputElement>(el, 'li[data-key="9"] input[type="checkbox"]');
+    expect(box.checked).to.equal(false);
+    expect($$(el, "button.confirm-selected")).to.have.length(0);
+    await click(el, "button.confirm-all");
+    const seen = proposal.items.map((item) => item.key);
+    expect(stub.calls.services[0].data).to.deep.equal({
+      proposal_id: 7,
+      decision: "confirm",
+      items: seen,
+    });
+    const again = await mount("quartermaster-proposals-card", stub);
+    $<HTMLInputElement>(again, 'li[data-key="9"] input[type="checkbox"]').click();
+    await again.updateComplete;
+    await click(again, "button.confirm-selected");
+    expect(stub.calls.services[1].data).to.deep.equal({
+      proposal_id: 7,
+      decision: "confirm",
+      items: [...seen, 9],
+    });
+  });
+
   it("rejects", async () => {
     const stub = stubHass();
     const el = await mount("quartermaster-proposals-card", stub);

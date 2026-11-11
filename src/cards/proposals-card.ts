@@ -27,11 +27,13 @@ export class QuartermasterProposalsCard extends QuartermasterCard {
     return configForm([TITLE_FIELD]);
   }
 
-  private choice(id: number): Choice {
-    let choice = this.choices.get(id);
+  private choice(proposal: Proposal): Choice {
+    let choice = this.choices.get(proposal.proposal_id);
     if (!choice) {
-      choice = { excluded: new Set(), correcting: new Set() };
-      this.choices.set(id, choice);
+      // A product not seen may only be hidden: it is set to zero only when
+      // the user ticks it.
+      choice = { excluded: missingKeys(proposal), correcting: new Set() };
+      this.choices.set(proposal.proposal_id, choice);
     }
     return choice;
   }
@@ -50,11 +52,12 @@ export class QuartermasterProposalsCard extends QuartermasterCard {
     );
   }
 
-  private async confirm(proposal: Proposal, all: boolean): Promise<void> {
-    const choice = this.choice(proposal.proposal_id);
+  /** Confirm the ticked rows, or with `seenOnly` every row that was seen. */
+  private async confirm(proposal: Proposal, seenOnly = false): Promise<void> {
+    const choice = this.choice(proposal);
     const keys = proposal.items
-      .map((item) => item.key)
-      .filter((key) => all || !choice.excluded.has(key));
+      .filter((item) => (seenOnly ? !item.missing : !choice.excluded.has(item.key)))
+      .map((item) => item.key);
     const corrections = [...choice.correcting]
       .filter((key) => keys.includes(key))
       .map((key) => {
@@ -75,7 +78,9 @@ export class QuartermasterProposalsCard extends QuartermasterCard {
       proposal_id: proposal.proposal_id,
       decision: "confirm",
     };
-    if (keys.length !== proposal.items.length) {
+    // Without items the integration confirms everything but the rows not
+    // seen, so a selection that includes one must name its keys.
+    if (keys.length !== proposal.items.length || proposal.items.some((item) => item.missing)) {
       data.items = keys;
     }
     if (corrections.length) {
@@ -98,7 +103,7 @@ export class QuartermasterProposalsCard extends QuartermasterCard {
   }
 
   private renderItem(proposal: Proposal, item: ProposalItem, snapshot: Snapshot) {
-    const choice = this.choice(proposal.proposal_id);
+    const choice = this.choice(proposal);
     const included = !choice.excluded.has(item.key);
     const correcting = choice.correcting.has(item.key);
     const name = item.product ?? this.l.t("unknown_product", { seen: item.seen_as });
@@ -120,7 +125,9 @@ export class QuartermasterProposalsCard extends QuartermasterCard {
             ${purchase
               ? this.l.t("bought", { amount: this.amount(item.proposed, item.unit) })
               : `${before} → ${this.amount(item.proposed, item.unit)}`}
-            · ${this.l.t("confidence", { percent: this.l.percent(item.confidence) })}
+            · ${item.missing
+              ? this.l.t("not_seen_item")
+              : this.l.t("confidence", { percent: this.l.percent(item.confidence) })}
             ${item.product && item.seen_as && item.seen_as !== item.product
               ? html`· ${this.l.t("seen_as", { seen: item.seen_as })}`
               : nothing}
@@ -172,8 +179,10 @@ export class QuartermasterProposalsCard extends QuartermasterCard {
       const image = proposal.has_image
         ? this.image({ proposal_id: proposal.proposal_id }, "")
         : undefined;
-      const choice = this.choice(proposal.proposal_id);
+      const choice = this.choice(proposal);
       const selected = proposal.items.length - choice.excluded.size;
+      const changed = !sameSet(choice.excluded, missingKeys(proposal));
+      const seen = proposal.items.some((item) => !item.missing);
       return html`
         <section data-proposal=${proposal.proposal_id}>
           <h3>${title}</h3>
@@ -190,11 +199,15 @@ export class QuartermasterProposalsCard extends QuartermasterCard {
             : nothing}
           ${this.canWrite
             ? html`<div class="actions">
-                <button class="primary confirm-all" ?disabled=${this.busy}
-                  @click=${() => this.confirm(proposal, true)}>${this.l.t("confirm_all")}</button>
-                ${choice.excluded.size
+                ${seen
+                  ? html`<button class="primary confirm-all" ?disabled=${this.busy}
+                      @click=${() => this.confirm(proposal, true)}>
+                      ${this.l.t(hasMissing(proposal) ? "confirm_seen" : "confirm_all")}
+                    </button>`
+                  : nothing}
+                ${changed
                   ? html`<button class="confirm-selected" ?disabled=${this.busy || !selected}
-                      @click=${() => this.confirm(proposal, false)}>
+                      @click=${() => this.confirm(proposal)}>
                       ${this.l.t("confirm_selected")}
                     </button>`
                   : nothing}
@@ -206,6 +219,18 @@ export class QuartermasterProposalsCard extends QuartermasterCard {
       `;
     })}`;
   }
+}
+
+function missingKeys(proposal: Proposal): Set<number> {
+  return new Set(proposal.items.filter((item) => item.missing).map((item) => item.key));
+}
+
+function hasMissing(proposal: Proposal): boolean {
+  return proposal.items.some((item) => item.missing);
+}
+
+function sameSet(a: Set<number>, b: Set<number>): boolean {
+  return a.size === b.size && [...a].every((key) => b.has(key));
 }
 
 defineCard(

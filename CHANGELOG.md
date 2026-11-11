@@ -15,6 +15,7 @@
 - Project skeleton: dashboard strategy registered for the "New dashboard" dialog, with a localized placeholder view (English, Italian) and a message when the integration is missing; TypeScript, Lit, Rollup, ESLint and Web Test Runner; CI for lint, tests, build with a dist check, Marketplace validation and release.
 
 ### Changed
+- Proposals card: products not seen (rows with `missing`) are marked and start unticked; **Confirm what was seen** leaves them out, and ticking one sets it to zero.
 - Zone editor: source type "List check" (`ledger`) with the days between checks; the camera_show `confirm` field is gone (cameras always ask); check status "list sent".
 
 ### Fixed
