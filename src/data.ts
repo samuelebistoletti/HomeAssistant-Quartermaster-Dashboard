@@ -14,14 +14,49 @@ interface Shared {
   snapshot?: Snapshot;
   error?: unknown;
   unsubscribe?: Promise<Unsubscribe | undefined>;
+  /** Failed attempts in a row, and the timer of the next one. */
+  attempts: number;
+  retry?: ReturnType<typeof setTimeout>;
 }
 
 const shared = new WeakMap<HassConnection, Shared>();
 
+/** Waits before trying again after a failed subscription; the last one repeats. */
+export const RETRY_DELAYS_MS = [2000, 5000, 15000, 30000];
+
+function open(connection: HassConnection, entry: Shared): void {
+  entry.unsubscribe = connection
+    .subscribeMessage<Snapshot>(
+      (snapshot) => {
+        entry.snapshot = snapshot;
+        entry.error = undefined;
+        entry.attempts = 0;
+        entry.listeners.forEach((l) => l(snapshot));
+      },
+      { type: `${DOMAIN}/subscribe` },
+    )
+    .catch((err: unknown) => {
+      entry.error = err;
+      entry.listeners.forEach((l) => l(undefined, err));
+      // The integration may be reloading or not set up yet: try again while
+      // a card is still listening.
+      if (shared.get(connection) === entry && entry.listeners.size) {
+        const delay = RETRY_DELAYS_MS[Math.min(entry.attempts, RETRY_DELAYS_MS.length - 1)];
+        entry.attempts += 1;
+        entry.retry = setTimeout(() => {
+          entry.retry = undefined;
+          open(connection, entry);
+        }, delay);
+      }
+      return undefined;
+    });
+}
+
 /**
  * Subscribe to `quartermaster/subscribe` on a connection. All cards on the
  * page share one websocket subscription per connection; it is closed when the
- * last card unsubscribes (cards do this when they are disconnected).
+ * last card unsubscribes (cards do this when they are disconnected). A failed
+ * subscription is reported to the cards and tried again.
  */
 export function subscribeSnapshot(
   connection: HassConnection,
@@ -29,29 +64,14 @@ export function subscribeSnapshot(
 ): () => void {
   let entry = shared.get(connection);
   if (!entry) {
-    const created: Shared = { listeners: new Set() };
-    entry = created;
-    shared.set(connection, created);
-    created.unsubscribe = connection
-      .subscribeMessage<Snapshot>(
-        (snapshot) => {
-          created.snapshot = snapshot;
-          created.error = undefined;
-          created.listeners.forEach((l) => l(snapshot));
-        },
-        { type: `${DOMAIN}/subscribe` },
-      )
-      .catch((err: unknown) => {
-        created.error = err;
-        created.listeners.forEach((l) => l(undefined, err));
-        if (shared.get(connection) === created) {
-          shared.delete(connection);
-        }
-        return undefined;
-      });
+    entry = { listeners: new Set(), attempts: 0 };
+    shared.set(connection, entry);
+    entry.listeners.add(listener);
+    open(connection, entry);
+  } else {
+    entry.listeners.add(listener);
   }
   const current = entry;
-  current.listeners.add(listener);
   if (current.snapshot || current.error) {
     listener(current.snapshot, current.error);
   }
@@ -61,6 +81,10 @@ export function subscribeSnapshot(
     }
     if (shared.get(connection) === current) {
       shared.delete(connection);
+    }
+    if (current.retry !== undefined) {
+      clearTimeout(current.retry);
+      current.retry = undefined;
     }
     void current.unsubscribe
       ?.then((unsub) => unsub?.())

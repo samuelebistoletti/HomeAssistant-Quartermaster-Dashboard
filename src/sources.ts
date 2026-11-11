@@ -73,7 +73,7 @@ export const SOURCE_FIELDS: Record<SourceType, FieldSpec[]> = {
     int("max_checks_per_day", 1, 96),
     { name: "trigger_entity", kind: "entity", domains: ["binary_sensor"] },
     { name: "trigger_state", kind: "select", options: ["off", "on"] },
-    int("trigger_delay_seconds", 0, 3600),
+    int("trigger_delay_seconds", 0, 120),
     int("min_interval_minutes", 1, 1440),
   ],
   camera_show: [
