@@ -31,6 +31,15 @@ describe("sources", () => {
     expect(buildSource(draft)).to.deep.equal({ problem: "invalid_number", field: "max_checks_per_day" });
   });
 
+  it("edits the interval of a zone kept by word", () => {
+    const draft = draftSource({ type: "ledger", check_days: 30 });
+    expect(draft.text.check_days).to.equal("30");
+    draft.text.check_days = "0";
+    expect(buildSource(draft)).to.deep.equal({ type: "ledger", check_days: 0 });
+    draft.text.check_days = "";
+    expect(buildSource(draft)).to.deep.equal({ type: "ledger" });
+  });
+
   it("keeps a manual source as it is", () => {
     expect(buildSource(draftSource({ type: "manual" }))).to.deep.equal({ type: "manual" });
   });

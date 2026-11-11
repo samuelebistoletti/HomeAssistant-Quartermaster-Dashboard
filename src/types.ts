@@ -54,14 +54,14 @@ export type EntityKey =
   | "photo_requests";
 
 /** Source types a zone can have. */
-export type SourceType = "camera" | "camera_show" | "passage" | "manual";
+export type SourceType = "camera" | "camera_show" | "passage" | "manual" | "ledger";
 
 /** One zone source with every field `set_zone` accepts. */
 export type ZoneSource = { type: SourceType | string } & Record<string, unknown>;
 
 export interface ZoneCheck {
   ts: string;
-  status: "updated" | "photo_requested" | "failed" | string;
+  status: "updated" | "photo_requested" | "list_sent" | "failed" | string;
   reason?: string | null;
   overall_confidence?: number | null;
 }

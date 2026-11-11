@@ -21,7 +21,7 @@ export interface FieldSpec {
   required?: boolean;
 }
 
-export const SOURCE_TYPES: SourceType[] = ["camera", "camera_show", "passage", "manual"];
+export const SOURCE_TYPES: SourceType[] = ["camera", "camera_show", "passage", "manual", "ledger"];
 
 /** Sources whose frames can show people: they need the privacy notice. */
 export const PRIVACY_SOURCES: ReadonlySet<string> = new Set(["camera_show", "passage"]);
@@ -79,11 +79,12 @@ export const SOURCE_FIELDS: Record<SourceType, FieldSpec[]> = {
   camera_show: [
     ...WATCH,
     { name: "active", kind: "select", options: ["when_armed", "always"] },
-    { name: "confirm", kind: "select", options: ["auto", "ask"] },
     int("arm_minutes", 1, 240),
   ],
   passage: [...WATCH, int("match_window_seconds", 10, 3600)],
   manual: [],
+  // Kept by word (a chest freezer): a guided check every check_days, 0 = on request.
+  ledger: [int("check_days", 0, 365)],
 };
 
 export function fieldsFor(type: string): FieldSpec[] {
