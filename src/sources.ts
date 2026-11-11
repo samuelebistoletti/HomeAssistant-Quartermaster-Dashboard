@@ -83,7 +83,7 @@ export const SOURCE_FIELDS: Record<SourceType, FieldSpec[]> = {
   ],
   passage: [...WATCH, int("match_window_seconds", 10, 3600)],
   manual: [],
-  // Kept by word (a chest freezer): a guided check every check_days, 0 = on request.
+  // List check, for places a photo shows badly: every check_days, 0 = on request.
   ledger: [int("check_days", 0, 365)],
 };
 

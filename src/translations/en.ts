@@ -140,7 +140,7 @@ export default {
   zone_never_updated: "Never updated",
   source_camera: "Camera",
   source_manual: "Manual",
-  source_ledger: "Kept by word (no photos)",
+  source_ledger: "List check (no photos)",
   source_camera_show: "Show to camera",
 
   photo_zone: "Zone",
@@ -264,7 +264,7 @@ export default {
   field_hours: "Active hours (HH:MM-HH:MM)",
   field_announce: "Announce to (notify entities, comma separated)",
   field_active: "Active",
-  field_check_days: "Days between guided checks (0 = only on request)",
+  field_check_days: "Days between list checks (0 = only on request)",
   field_arm_minutes: "Show mode duration (minutes)",
   field_match_window_seconds: "Match window (seconds)",
   option_auto: "Automatic",

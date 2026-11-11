@@ -137,7 +137,7 @@ const it: Strings = {
   zone_never_updated: "Mai aggiornata",
   source_camera: "Telecamera",
   source_manual: "Manuale",
-  source_ledger: "A registro (senza foto)",
+  source_ledger: "Controllo a elenco (senza foto)",
   source_camera_show: "Mostra alla telecamera",
 
   photo_zone: "Zona",
@@ -261,7 +261,7 @@ const it: Strings = {
   field_hours: "Orario attivo (HH:MM-HH:MM)",
   field_announce: "Annuncia a (entità notify, separate da virgole)",
   field_active: "Attiva",
-  field_check_days: "Giorni tra i controlli guidati (0 = solo su richiesta)",
+  field_check_days: "Giorni tra i controlli a elenco (0 = solo su richiesta)",
   field_arm_minutes: "Durata della modalità mostra prodotto (minuti)",
   field_match_window_seconds: "Finestra di abbinamento (secondi)",
   option_auto: "Automatica",
