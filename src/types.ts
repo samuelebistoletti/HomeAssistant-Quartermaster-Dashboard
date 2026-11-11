@@ -180,7 +180,7 @@ export interface ProposalItem {
 export interface Proposal {
   proposal_id: number;
   /** `count` (photos, cameras) or `purchase` (receipts); missing means count. */
-  kind?: "count" | "purchase" | string;
+  kind?: "count" | "purchase" | "movement" | string;
   zone_id: string | null;
   channel: string;
   created: string;
