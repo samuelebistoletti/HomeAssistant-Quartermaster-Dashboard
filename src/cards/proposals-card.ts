@@ -179,9 +179,11 @@ export class QuartermasterProposalsCard extends QuartermasterCard {
                       (event.target as HTMLSelectElement).value === NEW_PRODUCT,
                     )}>
                   <option value="">${item.product ?? this.l.t("choose_product")}</option>
-                  <option value=${NEW_PRODUCT} ?selected=${creating}>
-                    ➕ ${this.l.t("new_product")}
-                  </option>
+                  ${proposal.channel === "camera"
+                    ? nothing
+                    : html`<option value=${NEW_PRODUCT} ?selected=${creating}>
+                        ➕ ${this.l.t("new_product")}
+                      </option>`}
                   ${products.map(
                     (p) => html`<option value=${String(p.product_id)}>${p.name}</option>`,
                   )}

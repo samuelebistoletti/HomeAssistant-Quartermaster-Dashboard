@@ -427,9 +427,9 @@ function e(e,t,i,o){var s,n=arguments.length,r=n<3?t:null===o?o=Object.getOwnPro
                 <select name=${`${d}-product`}
                   @change=${e=>this.setCreating(o,t.key,"new"===e.target.value)}>
                   <option value="">${t.product??this.l.t("choose_product")}</option>
-                  <option value=${"new"} ?selected=${r}>
-                    ➕ ${this.l.t("new_product")}
-                  </option>
+                  ${"camera"===e.channel?Z:W`<option value=${"new"} ?selected=${r}>
+                        ➕ ${this.l.t("new_product")}
+                      </option>`}
                   ${u.map(e=>W`<option value=${String(e.product_id)}>${e.name}</option>`)}
                 </select>
               </label>

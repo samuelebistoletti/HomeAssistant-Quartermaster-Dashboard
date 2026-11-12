@@ -586,6 +586,17 @@ describe("proposals card: new products", () => {
     });
   });
 
+  it("offers no new product for a camera sighting", async () => {
+    const base = sampleSnapshot();
+    const camera = { ...base.proposals[0], channel: "camera" };
+    const el = await mount(
+      "quartermaster-proposals-card",
+      stubHass({ snapshot: { ...base, proposals: [camera] } }),
+    );
+    await click(el, 'li[data-key="1"] button.correct');
+    expect($$(el, 'option[value="new"]')).to.have.length(0);
+  });
+
   it("asks the zone of a new product from a receipt", async () => {
     const receipt = {
       proposal_id: 8,
