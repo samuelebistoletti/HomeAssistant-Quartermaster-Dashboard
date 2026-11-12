@@ -36,7 +36,13 @@ npm run build     # Rollup -> dist/quartermaster-dashboard.js, committed
 - `dist/` must match the sources: run `npm run build` and commit it.
 - Dependencies are pinned with the lockfile; no runtime dependency beyond Lit without asking.
 - Always the latest stable version of everything (npm packages, Node, GitHub Actions, Home Assistant). Adopt new majors instead of pinning back; TypeScript 7 runs `tsc` while tools that need the compiler API use `@typescript/typescript6`, as the TypeScript 7.0 announcement recommends.
-- After every push wait for all GitHub Actions runs of the commit and fix any failure at once.
+- Commit and push directly on `main`.
+- After every push, run one `gh run list` for the commit; while runs are still going, watch them in the background and keep working, then report the result and fix any failure at once.
+
+## Working with people
+
+- Reply in the language the person writes in; code, commits and docs stay in English.
+- When someone must act by hand (the Home Assistant UI, the Marketplace, a terminal), give numbered click-by-click steps: exact menu paths, field names, values and commands in code blocks, and what they should see at the end. Check the outcome yourself instead of asking what happened.
 
 ## Release
 
