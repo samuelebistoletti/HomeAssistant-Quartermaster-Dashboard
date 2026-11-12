@@ -1,6 +1,11 @@
 # Quartermaster Dashboard
 
-Dashboard strategy and custom cards (TypeScript + Lit) for the Quartermaster Home Assistant integration, distributed from the Marketplace as a dashboard (`plugin` category). The binding specification, decisions and working memory live in the integration repository (`HomeAssistant-Quartermaster`): `docs/SPEC.md`, `TECHNICAL_NOTES.md`, `docs/dev/MEMORY.md`. Read them first.
+Dashboard strategy and custom cards (TypeScript + Lit) for the Quartermaster Home Assistant integration, distributed from the Marketplace as a dashboard (`plugin` category). Specification, decisions and working memory live in the integration repository (`HomeAssistant-Quartermaster`, cloned side by side):
+
+- `docs/dev/MEMORY.md`: where the work stands. Read it at the start of every session.
+- `docs/dashboard-api.md`: the websocket and snapshot contract that `src/types.ts` mirrors. Read it before touching data, types or actions.
+- `docs/SPEC.md` (§6.5 dashboard) and `TECHNICAL_NOTES.md`: behaviour and decisions. Read the topic before changing a view or a card's behaviour.
+- GitHub issues in both repositories: open work.
 
 This file is shared with every contributor and agent. Keep it short, factual and free of personal or machine-specific content.
 
