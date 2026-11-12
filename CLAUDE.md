@@ -36,3 +36,17 @@ npm run build     # Rollup -> dist/quartermaster-dashboard.js, committed
 ## Release
 
 Bumping `version` in `package.json` on `main` runs `release.yaml`: lint, tests, build and dist check, then the tag `v<version>` and a GitHub release with `dist/quartermaster-dashboard.js`. `0.0.0` is never published. Release in pairs with the integration and update the compatibility table in both READMEs. Never bump the version unless the author asks.
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in GitHub Issues (`gh` CLI). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default triage labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `GLOSSARY.md` and `docs/adr/` at the repo root (created when needed), plus the integration repository's spec and decisions. See `docs/agents/domain.md`.
