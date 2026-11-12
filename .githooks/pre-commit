@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Check-only gate before every commit: lint, type check and a dist/ that
+# matches the sources, as in CI. Enabled by `npm ci` (the "prepare" script
+# sets core.hooksPath). If dist/ is stale, stage the rebuilt dist/ and commit again.
+
+set -e
+
+cd "$(git rev-parse --show-toplevel)"
+
+npm run -s lint
+npm run -s build
+if ! git diff --quiet -- dist/; then
+    echo "dist/ did not match the sources and has been rebuilt: git add dist/ and commit again." >&2
+    exit 1
+fi

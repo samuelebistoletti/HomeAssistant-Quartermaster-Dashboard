@@ -13,7 +13,8 @@
     "build": "rollup -c",
     "watch": "rollup -c --watch",
     "lint": "eslint . && tsc --noEmit",
-    "test": "web-test-runner"
+    "test": "web-test-runner",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
     "lit": "3.3.3"

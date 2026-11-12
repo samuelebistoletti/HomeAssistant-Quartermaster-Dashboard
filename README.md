@@ -160,7 +160,7 @@ Node.js 26 (`.nvmrc`), and Chrome or Chromium for the tests.
 ### Commands
 
 ```bash
-npm ci
+npm ci           # also enables the pre-commit hook (lint, type check, dist check)
 npm run lint     # ESLint and type check with tsc (TypeScript 7)
 npm test         # Web Test Runner in Chrome
 npm run build    # Rollup -> dist/quartermaster-dashboard.js (commit it)
