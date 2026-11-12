@@ -206,7 +206,7 @@ describe("proposals card", () => {
     expect(text(el)).to.contain("Latte");
     expect(text(el)).to.contain("1 → 2 bottiglia");
     expect(text(el)).to.contain("Not recognized: yogurt");
-    expect(text(el)).to.contain("Choose the product to apply this item.");
+    expect(text(el)).to.contain("as a new product, to apply it; otherwise it waits.");
     expect(text(el)).to.contain("Not seen: Burro");
   });
 
@@ -564,6 +564,52 @@ describe("zone card: checks, crop and show mode", () => {
       zone: "shelf",
     });
     expect($$(el, "button")).to.have.length(0);
+  });
+});
+
+describe("proposals card: new products", () => {
+  it("creates an unknown item as a new product with another name", async () => {
+    const stub = stubHass();
+    const el = await mount("quartermaster-proposals-card", stub);
+    await click(el, 'li[data-key="1"] button.correct');
+    expect($$(el, '[name="p7-k1-name"]')).to.have.length(0);
+    setValue(el, "p7-k1-product", "new");
+    await el.updateComplete;
+    expect($<HTMLInputElement>(el, '[name="p7-k1-name"]').value).to.equal("yogurt");
+    expect($$(el, '[name="p7-k1-zone"]')).to.have.length(0); // a count has its zone
+    setValue(el, "p7-k1-name", "Yogurt greco");
+    await click(el, "button.confirm-all");
+    expect(stub.calls.services[0].data).to.deep.equal({
+      proposal_id: 7,
+      decision: "confirm",
+      corrections: [{ key: 1, quantity: 3, new_product: true, name: "Yogurt greco" }],
+    });
+  });
+
+  it("asks the zone of a new product from a receipt", async () => {
+    const receipt = {
+      proposal_id: 8,
+      kind: "purchase",
+      zone_id: null,
+      channel: "dashboard",
+      created: new Date().toISOString(),
+      items: [
+        { key: 0, product_id: null, product: null, seen_as: "BISCOTTI", current: null, proposed: 1, unit: null, confidence: 0.8 },
+      ],
+      not_seen: [],
+    };
+    const stub = stubHass({ snapshot: sampleSnapshot({ proposals: [receipt] }) });
+    const el = await mount("quartermaster-proposals-card", stub);
+    await click(el, 'li[data-key="0"] button.correct');
+    setValue(el, "p8-k0-product", "new");
+    await el.updateComplete;
+    setValue(el, "p8-k0-zone", "pantry");
+    await click(el, "button.confirm-all");
+    expect(stub.calls.services[0].data).to.deep.equal({
+      proposal_id: 8,
+      decision: "confirm",
+      corrections: [{ key: 0, quantity: 1, new_product: true, name: "BISCOTTI", zone: "pantry" }],
+    });
   });
 });
 

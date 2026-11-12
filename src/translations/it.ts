@@ -102,7 +102,7 @@ const it: Strings = {
   reject: "Rifiuta",
   not_seen_item: "Non visto: azzerato solo se spuntato",
   not_seen: "Non visti: {products}",
-  needs_product: "Scegli il prodotto per applicare questa voce.",
+  needs_product: "Correggila con un prodotto, o come nuovo prodotto, per applicarla; altrimenti resta in attesa.",
   quantity: "Quantità",
   product: "Prodotto",
 

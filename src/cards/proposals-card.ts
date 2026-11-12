@@ -6,11 +6,16 @@ import { configForm, defineCard, QuartermasterCard, TITLE_FIELD } from "./base";
 
 export const PROPOSALS_CARD = "quartermaster-proposals-card";
 
+/** Product select value that creates the item as a new product. */
+const NEW_PRODUCT = "new";
+
 interface Choice {
   /** Keys left out of the confirmation. */
   excluded: Set<number>;
   /** Keys with the correction fields open. */
   correcting: Set<number>;
+  /** Keys to create as a new product. */
+  creating: Set<number>;
 }
 
 /** Pending proposals: confirm (all or some), correct items, or reject. */
@@ -32,7 +37,7 @@ export class QuartermasterProposalsCard extends QuartermasterCard {
     if (!choice) {
       // A product not seen may only be hidden: it is set to zero only when
       // the user ticks it.
-      choice = { excluded: missingKeys(proposal), correcting: new Set() };
+      choice = { excluded: missingKeys(proposal), correcting: new Set(), creating: new Set() };
       this.choices.set(proposal.proposal_id, choice);
     }
     return choice;
@@ -41,6 +46,15 @@ export class QuartermasterProposalsCard extends QuartermasterCard {
   private toggle(set: Set<number>, key: number): void {
     if (!set.delete(key)) {
       set.add(key);
+    }
+    this.choices = new Map(this.choices);
+  }
+
+  private setCreating(choice: Choice, key: number, creating: boolean): void {
+    if (creating) {
+      choice.creating.add(key);
+    } else {
+      choice.creating.delete(key);
     }
     this.choices = new Map(this.choices);
   }
@@ -62,11 +76,22 @@ export class QuartermasterProposalsCard extends QuartermasterCard {
       .filter((key) => keys.includes(key))
       .map((key) => {
         const correction: Record<string, unknown> = { key };
-        const product = this.value(`p${proposal.proposal_id}-k${key}-product`);
-        const quantity = Number(
-          this.value(`p${proposal.proposal_id}-k${key}-quantity`).replace(",", "."),
-        );
-        if (product) {
+        const prefix = `p${proposal.proposal_id}-k${key}`;
+        const product = this.value(`${prefix}-product`);
+        const quantity = Number(this.value(`${prefix}-quantity`).replace(",", "."));
+        if (choice.creating.has(key)) {
+          // Named as read unless the user typed another name; a purchase
+          // also needs the zone it goes to.
+          correction.new_product = true;
+          const name = this.value(`${prefix}-name`).trim();
+          const zone = this.value(`${prefix}-zone`);
+          if (name) {
+            correction.name = name;
+          }
+          if (zone) {
+            correction.zone = zone;
+          }
+        } else if (product) {
           correction.product = product;
         }
         if (Number.isFinite(quantity) && quantity >= 0) {
@@ -106,6 +131,7 @@ export class QuartermasterProposalsCard extends QuartermasterCard {
     const choice = this.choice(proposal);
     const included = !choice.excluded.has(item.key);
     const correcting = choice.correcting.has(item.key);
+    const creating = correcting && choice.creating.has(item.key);
     const name = item.product ?? this.l.t("unknown_product", { seen: item.seen_as });
     const purchase = proposal.kind === "purchase";
     const before = item.current === null ? "–" : this.l.number(item.current);
@@ -145,13 +171,40 @@ export class QuartermasterProposalsCard extends QuartermasterCard {
           ? html`<div class="form full">
               <label>
                 ${this.l.t("product")}
-                <select name=${`${prefix}-product`}>
+                <select name=${`${prefix}-product`}
+                  @change=${(event: Event) =>
+                    this.setCreating(
+                      choice,
+                      item.key,
+                      (event.target as HTMLSelectElement).value === NEW_PRODUCT,
+                    )}>
                   <option value="">${item.product ?? this.l.t("choose_product")}</option>
+                  <option value=${NEW_PRODUCT} ?selected=${creating}>
+                    ➕ ${this.l.t("new_product")}
+                  </option>
                   ${products.map(
                     (p) => html`<option value=${String(p.product_id)}>${p.name}</option>`,
                   )}
                 </select>
               </label>
+              ${creating
+                ? html`<label>
+                    ${this.l.t("name")}
+                    <input name=${`${prefix}-name`} type="text" autocomplete="off"
+                      .value=${item.seen_as} />
+                  </label>`
+                : nothing}
+              ${creating && purchase
+                ? html`<label>
+                    ${this.l.t("default_zone")}
+                    <select name=${`${prefix}-zone`}>
+                      <option value="">–</option>
+                      ${snapshot.zones.map(
+                        (z) => html`<option value=${z.zone_id}>${z.name}</option>`,
+                      )}
+                    </select>
+                  </label>`
+                : nothing}
               <label>
                 ${this.l.t("quantity")}
                 <input name=${`${prefix}-quantity`} type="number" inputmode="decimal" min="0"

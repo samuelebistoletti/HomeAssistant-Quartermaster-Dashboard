@@ -105,7 +105,7 @@ export default {
   reject: "Reject",
   not_seen_item: "Not seen: set to zero only if ticked",
   not_seen: "Not seen: {products}",
-  needs_product: "Choose the product to apply this item.",
+  needs_product: "Correct it with a product, or as a new product, to apply it; otherwise it waits.",
   quantity: "Quantity",
   product: "Product",
 
