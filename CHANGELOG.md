@@ -26,3 +26,6 @@
 ### Fixed
 - A refused subscription (integration reloading or not set up yet) is tried again while a card is open, instead of leaving the error on screen until the page reloads.
 - The door camera delay field accepts the same range as the integration (0 to 120 seconds).
+
+### Removed
+- The camera source field `max_age_minutes`, removed by the integration (a camera frame has no documented time).

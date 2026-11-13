@@ -15,9 +15,9 @@ describe("sources", () => {
   });
 
   it("round-trips a source and drops cleared fields", () => {
-    const draft = draftSource({ type: "camera", entity_id: "camera.x", roi: [0, 0, 1, 1], max_age_minutes: 30 });
+    const draft = draftSource({ type: "camera", entity_id: "camera.x", roi: [0, 0, 1, 1], max_checks_per_day: 2 });
     expect(draft.text.roi).to.equal("0, 0, 1, 1");
-    draft.text.max_age_minutes = "";
+    draft.text.max_checks_per_day = "";
     expect(buildSource(draft)).to.deep.equal({ type: "camera", entity_id: "camera.x", roi: [0, 0, 1, 1] });
   });
 

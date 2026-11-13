@@ -272,7 +272,6 @@ const it: Strings = {
   default_option: "Predefinito",
   field_entity_id: "Telecamera",
   field_roi: "Area (x1, y1, x2, y2 da 0 a 1)",
-  field_max_age_minutes: "Età massima dell'immagine (minuti)",
   field_max_checks_per_day: "Controlli al giorno al massimo",
   field_trigger_entity: "Entità di attivazione",
   field_trigger_state: "Stato di attivazione",

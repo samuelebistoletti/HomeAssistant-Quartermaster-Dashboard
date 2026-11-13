@@ -275,7 +275,6 @@ export default {
   default_option: "Default",
   field_entity_id: "Camera",
   field_roi: "Area (x1, y1, x2, y2 from 0 to 1)",
-  field_max_age_minutes: "Maximum image age (minutes)",
   field_max_checks_per_day: "Checks per day at most",
   field_trigger_entity: "Trigger entity",
   field_trigger_state: "Trigger state",

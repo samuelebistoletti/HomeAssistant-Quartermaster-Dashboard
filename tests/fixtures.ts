@@ -12,7 +12,7 @@ export function shelfZone(overrides: Partial<Zone> = {}): Zone {
     aliases: ["mensola"],
     sources: ["camera", "camera_show", "manual"],
     source_details: [
-      { type: "camera", entity_id: "camera.garage", roi: [0, 0, 0.5, 1], max_age_minutes: 30 },
+      { type: "camera", entity_id: "camera.garage", roi: [0, 0, 0.5, 1] },
       { type: "camera_show", entity_id: "camera.garage", trigger_entity: "binary_sensor.garage_motion", arm_minutes: 10, future_field: "kept" },
       { type: "manual" },
     ],

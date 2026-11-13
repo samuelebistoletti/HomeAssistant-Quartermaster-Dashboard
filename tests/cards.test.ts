@@ -938,7 +938,7 @@ describe("zones card", () => {
       aliases: ["mensola"],
       sources: [
         { type: "manual" },
-        { type: "camera", entity_id: "camera.garage", roi: [0, 0, 1, 1], max_age_minutes: 30, max_checks_per_day: 2 },
+        { type: "camera", entity_id: "camera.garage", roi: [0, 0, 1, 1], max_checks_per_day: 2 },
       ],
       check_schedule: "0 19 * * *",
       reminder_days: 7,
