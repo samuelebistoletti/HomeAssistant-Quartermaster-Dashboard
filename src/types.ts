@@ -120,8 +120,17 @@ export interface Product {
   essential: boolean;
   min_stock: number | null;
   target_stock: number | null;
+  /** Additive (product life cycle): typical days before it expires. */
+  shelf_life_days?: number | null;
+  visual_hints?: string | null;
   total: number;
   stock: StockLevel[];
+}
+
+/** An archived product, to bring back with `archive_product`. */
+export interface ArchivedProduct {
+  product_id: number;
+  name: string;
 }
 
 export interface ToBuy {
@@ -207,6 +216,8 @@ export interface Snapshot {
   analyses_today: number;
   daily_analysis_limit?: number;
   can_write: boolean;
+  /** Additive (product life cycle). */
+  archived_products?: ArchivedProduct[];
 }
 
 export interface JournalEntry {

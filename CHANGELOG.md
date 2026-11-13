@@ -14,6 +14,9 @@
 - English and Italian strings for every view, card, reason and error.
 - Project skeleton: dashboard strategy registered for the "New dashboard" dialog, with a localized placeholder view (English, Italian) and a message when the integration is missing; TypeScript, Lit, Rollup, ESLint and Web Test Runner; CI for lint, tests, build with a dist check, Marketplace validation and release.
 
+### Added
+- Inventory card: product editor. The edit button of a row sets the quantity and the best-before date, changes the product's name, other names, category, unit, default zone and shelf life (an emptied field clears it), moves stock to another zone (all or part) and archives the product after a second tap. Archived products are listed with **Bring back**; products without stock show in their default zone, or under "No zone". History labels moves and archiving. Needs the integration's `update_product`, `archive_product` and `move_stock`.
+
 ### Changed
 - Proposals card: an unknown item can be corrected as **➕ New product**, named as read or with another name, and with its zone for a receipt; the integration creates it and applies the quantity. Unknown items left alone stay waiting after a confirm instead of vanishing (needs the integration with the `new_product` correction).
 - Proposals card: products not seen (rows with `missing`) are marked and start unticked; **Confirm what was seen** leaves them out, and ticking one sets it to zero.

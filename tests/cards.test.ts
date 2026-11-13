@@ -351,6 +351,93 @@ describe("inventory card", () => {
   });
 });
 
+describe("inventory card: product editor", () => {
+  it("sets the best-before date with the quantity", async () => {
+    const stub = stubHass();
+    const el = await mount("quartermaster-inventory-card", stub, { zone: "pantry" });
+    await click(el, 'li[data-product="4"] button.edit');
+    setValue(el, "set-best-before", `${new Date().getFullYear() + 1}-01-31`);
+    await click(el, 'li[data-product="4"] .quantity-form button.primary');
+    expect(stub.calls.services[0].data).to.deep.equal({
+      product: "4",
+      quantity: 3,
+      zone: "pantry",
+      best_before: `${new Date().getFullYear() + 1}-01-31`,
+    });
+  });
+
+  it("saves only the details that changed; an emptied field clears", async () => {
+    const stub = stubHass();
+    const el = await mount("quartermaster-inventory-card", stub, { zone: "fridge" });
+    await click(el, 'li[data-product="1"] button.edit');
+    expect($<HTMLInputElement>(el, '[name="edit-name"]').value).to.equal("Latte");
+    setValue(el, "edit-name", "Latte intero");
+    setValue(el, "edit-aliases", "latte, latte fresco");
+    setValue(el, "edit-unit", "");
+    setValue(el, "edit-shelf-life", "7");
+    await click(el, "button.save-product");
+    expect(stub.calls.services[0]).to.deep.include({ service: "update_product" });
+    expect(stub.calls.services[0].data).to.deep.equal({
+      product: "1",
+      name: "Latte intero",
+      unit: null,
+      shelf_life_days: 7,
+      aliases: ["latte", "latte fresco"],
+    });
+  });
+
+  it("moves stock to another zone, all of it or a part", async () => {
+    const stub = stubHass();
+    const el = await mount("quartermaster-inventory-card", stub, { zone: "pantry" });
+    await click(el, 'li[data-product="4"] button.edit');
+    setValue(el, "move-zone", "fridge");
+    await click(el, "button.move");
+    await click(el, 'li[data-product="4"] button.edit');
+    setValue(el, "move-quantity", "1");
+    await click(el, "button.move");
+    expect(stub.calls.services.map((c) => [c.service, c.data])).to.deep.equal([
+      ["move_stock", { product: "4", from_zone: "pantry", to_zone: "fridge" }],
+      ["move_stock", { product: "4", from_zone: "pantry", to_zone: "fridge", quantity: 1 }],
+    ]);
+  });
+
+  it("archives after a second tap and brings archived products back", async () => {
+    const stub = stubHass({
+      snapshot: sampleSnapshot({ archived_products: [{ product_id: 9, name: "Latte di soia" }] }),
+    });
+    const el = await mount("quartermaster-inventory-card", stub);
+    await click(el, 'li[data-product="4"] button.edit');
+    await click(el, "button.archive");
+    expect(stub.calls.services).to.have.length(0);
+    expect(text(el)).to.contain("Archive Pasta?");
+    await click(el, "button.archive-confirm");
+    await click(el, 'li[data-archived="9"] button.bring-back');
+    expect(stub.calls.services.map((c) => [c.service, c.data])).to.deep.equal([
+      ["archive_product", { product: "4" }],
+      ["archive_product", { product: "9", archived: false }],
+    ]);
+  });
+
+  it("shows products without stock in their default zone, or without a zone", async () => {
+    const base = sampleSnapshot();
+    const empty = (product_id: number, name: string, zone: string | null) => ({
+      ...base.products[0],
+      product_id,
+      name,
+      default_zone_id: zone,
+      total: 0,
+      stock: [],
+    });
+    const stub = stubHass({
+      snapshot: { ...base, products: [...base.products, empty(7, "Riso", "pantry"), empty(8, "Sale", null)] },
+    });
+    const el = await mount("quartermaster-inventory-card", stub);
+    expect($$(el, "h3").map((h) => h.textContent)).to.deep.equal(["Frigo", "Dispensa", "No zone"]);
+    expect($<HTMLElement>(el, 'li[data-product="7"]').textContent).to.contain("Riso");
+    expect($$(el, 'li[data-product="8"] button.plus')).to.have.length(0);
+  });
+});
+
 describe("history card", () => {
   it("loads the journal and undoes an operation", async () => {
     const stub = stubHass({ language: "it" });
