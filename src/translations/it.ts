@@ -91,6 +91,13 @@ const it: Strings = {
 
   proposals_empty: "Nessuna proposta da confermare.",
   proposal_from: "{zone}, {time}",
+  proposal_camera: "Telecamera, {zone}, {time}",
+  movement_taken: "preso: {amount} · ne resterebbero {left}",
+  movement_returned: "rimesso: {amount} (annulla il prelievo)",
+  taken_quantity: "Quantità presa",
+  confirm: "Conferma",
+  unknown_sighting: "Qualcosa",
+  unclear_sighting: "Visto da una telecamera, non abbastanza chiaro da registrare. Rifiutalo, o manda una foto dello scaffale.",
   proposal_unknown_zone: "Zona sconosciuta",
   unknown_product: "Non riconosciuto: {seen}",
   seen_as: "visto come {seen}",

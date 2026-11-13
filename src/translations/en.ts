@@ -94,6 +94,13 @@ export default {
 
   proposals_empty: "No proposals to confirm.",
   proposal_from: "{zone}, {time}",
+  proposal_camera: "Camera, {zone}, {time}",
+  movement_taken: "taken: {amount} · {left} would be left",
+  movement_returned: "put back: {amount} (undoes the take)",
+  taken_quantity: "Quantity taken",
+  confirm: "Confirm",
+  unknown_sighting: "Something",
+  unclear_sighting: "Seen by a camera, not clear enough to record. Reject it, or send a photo of the shelf.",
   proposal_unknown_zone: "Unknown zone",
   unknown_product: "Not recognized: {seen}",
   seen_as: "seen as {seen}",

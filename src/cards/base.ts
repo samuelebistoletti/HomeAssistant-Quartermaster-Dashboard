@@ -245,8 +245,11 @@ export abstract class QuartermasterCard extends LitElement {
     return this.snapshot?.zones.find((z) => z.zone_id === id)?.name ?? id ?? "";
   }
 
-  /** Quantity with its unit, such as "2 bottle". */
-  protected amount(quantity: number, unit: string | null | undefined): string {
+  /** Quantity with its unit, such as "2 bottle"; "–" when unknown. */
+  protected amount(quantity: number | null, unit: string | null | undefined): string {
+    if (quantity === null) {
+      return "–";
+    }
     const number = this.l.number(quantity);
     return unit ? `${number} ${unit}` : number;
   }

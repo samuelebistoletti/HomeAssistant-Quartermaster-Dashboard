@@ -711,6 +711,71 @@ describe("proposals card: new products", () => {
   });
 });
 
+describe("proposals card: camera requests", () => {
+  const movement = (notes: string, moved = 1) => ({
+    proposal_id: 20,
+    kind: "movement",
+    zone_id: "pantry",
+    channel: "camera",
+    created: new Date().toISOString(),
+    items: [
+      { key: 0, product_id: 4, product: "Pasta", seen_as: "pasta", current: 3, proposed: 3 - moved, unit: null, confidence: 0.7, notes, moved },
+    ],
+    not_seen: [],
+  });
+
+  it("shows a take with what would be left and confirms it", async () => {
+    const stub = stubHass({ snapshot: sampleSnapshot({ proposals: [movement("taken")] }) });
+    const el = await mount("quartermaster-proposals-card", stub);
+    expect(text(el)).to.contain("Camera, Dispensa").and.contain("taken: 1 · 2 would be left");
+    expect($$(el, 'input[type="checkbox"]')).to.have.length(0);
+    await click(el, "button.confirm-movement");
+    expect(stub.calls.services[0].data).to.deep.equal({ proposal_id: 20, decision: "confirm" });
+  });
+
+  it("confirms another quantity taken", async () => {
+    const stub = stubHass({ snapshot: sampleSnapshot({ proposals: [movement("taken")] }) });
+    const el = await mount("quartermaster-proposals-card", stub);
+    await click(el, "button.correct");
+    setValue(el, "p20-k0-moved", "2");
+    await click(el, "button.confirm-movement");
+    expect(stub.calls.services[0].data).to.deep.equal({
+      proposal_id: 20,
+      decision: "confirm",
+      corrections: [{ key: 0, moved: 2 }],
+    });
+  });
+
+  it("asks about a product put back without a quantity field", async () => {
+    const el = await mount(
+      "quartermaster-proposals-card",
+      stubHass({ snapshot: sampleSnapshot({ proposals: [movement("returned")] }) }),
+    );
+    expect(text(el)).to.contain("put back: 1 (undoes the take)");
+    expect($$(el, "button.correct")).to.have.length(0);
+  });
+
+  it("offers only reject for an unclear camera sighting", async () => {
+    const unclear = {
+      proposal_id: 21,
+      kind: "count",
+      zone_id: "pantry",
+      channel: "camera",
+      created: new Date().toISOString(),
+      items: [
+        { key: 0, product_id: null, product: null, seen_as: "barattolo", current: null, proposed: null, unit: null, confidence: 0.5, notes: "unclear" },
+      ],
+      not_seen: [],
+    };
+    const stub = stubHass({ snapshot: sampleSnapshot({ proposals: [unclear] }) });
+    const el = await mount("quartermaster-proposals-card", stub);
+    expect(text(el)).to.contain("barattolo").and.contain("not clear enough to record");
+    expect($$(el, "button").map((b) => b.className)).to.deep.equal(["danger reject"]);
+    await click(el, "button.reject");
+    expect(stub.calls.services[0].data).to.deep.equal({ proposal_id: 21, decision: "reject" });
+  });
+});
+
 describe("proposals card: purchases and crops", () => {
   const purchase = {
     proposal_id: 8,

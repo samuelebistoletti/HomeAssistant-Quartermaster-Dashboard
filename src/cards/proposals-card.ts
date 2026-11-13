@@ -116,6 +116,26 @@ export class QuartermasterProposalsCard extends QuartermasterCard {
     }
   }
 
+  /** A camera request: the quantity seen, or the one the user corrected. */
+  private async confirmMovement(proposal: Proposal, item: ProposalItem): Promise<void> {
+    const data: Record<string, unknown> = {
+      proposal_id: proposal.proposal_id,
+      decision: "confirm",
+    };
+    if (this.choice(proposal).correcting.has(item.key)) {
+      const raw = this.value(`p${proposal.proposal_id}-k${item.key}-moved`);
+      const moved = Number(raw.replace(",", "."));
+      if (!Number.isFinite(moved) || moved <= 0) {
+        this.showError(this.l.t("error_invalid_quantity", { quantity: raw }));
+        return;
+      }
+      data.corrections = [{ key: item.key, moved }];
+    }
+    if (await this.action("confirm_pending", data)) {
+      this.choices.delete(proposal.proposal_id);
+    }
+  }
+
   private async reject(proposal: Proposal): Promise<void> {
     if (
       await this.action("confirm_pending", {
@@ -218,6 +238,77 @@ export class QuartermasterProposalsCard extends QuartermasterCard {
     `;
   }
 
+  /** A product a camera saw taken or put back, waiting for a yes. */
+  private renderMovement(proposal: Proposal, item: ProposalItem) {
+    const choice = this.choice(proposal);
+    const correcting = choice.correcting.has(item.key) && item.notes === "taken";
+    const moved = item.moved ?? 0;
+    const name = item.product ?? item.seen_as;
+    const what =
+      item.notes === "taken"
+        ? this.l.t("movement_taken", {
+            amount: this.amount(moved, item.unit),
+            left: this.amount(Math.max((item.current ?? 0) - moved, 0), item.unit),
+          })
+        : this.l.t("movement_returned", { amount: this.amount(moved, item.unit) });
+    return html`
+      <ul class="rows">
+        <li class="wrap" data-key=${item.key}>
+          <div class="grow">
+            <div class="name">${name}</div>
+            <div class="secondary">
+              ${what} · ${this.l.t("confidence", { percent: this.l.percent(item.confidence) })}
+            </div>
+          </div>
+          ${this.canWrite && item.notes === "taken"
+            ? html`<button class="correct" @click=${() => this.toggle(choice.correcting, item.key)}>
+                ${correcting ? this.l.t("cancel") : this.l.t("correct")}
+              </button>`
+            : nothing}
+          ${correcting
+            ? html`<div class="form full">
+                <label>
+                  ${this.l.t("taken_quantity")}
+                  <input name=${`p${proposal.proposal_id}-k${item.key}-moved`} type="number"
+                    inputmode="decimal" min="0" step="any" .value=${String(moved)} />
+                </label>
+              </div>`
+            : nothing}
+        </li>
+      </ul>
+      ${this.canWrite
+        ? html`<div class="actions">
+            <button class="primary confirm-movement" ?disabled=${this.busy}
+              @click=${() => this.confirmMovement(proposal, item)}>${this.l.t("confirm")}</button>
+            <button class="danger reject" ?disabled=${this.busy}
+              @click=${() => this.reject(proposal)}>${this.l.t("reject")}</button>
+          </div>`
+        : nothing}
+    `;
+  }
+
+  /** A camera sighting nobody can confirm (unknown or unclear product). */
+  private renderUnclear(proposal: Proposal) {
+    return html`
+      <ul class="rows">
+        ${proposal.items.map(
+          (item) => html`<li data-key=${item.key}>
+            <div class="grow">
+              <div class="name">${item.seen_as || this.l.t("unknown_sighting")}</div>
+              <div class="secondary">${this.l.t("unclear_sighting")}</div>
+            </div>
+          </li>`,
+        )}
+      </ul>
+      ${this.canWrite
+        ? html`<div class="actions">
+            <button class="danger reject" ?disabled=${this.busy}
+              @click=${() => this.reject(proposal)}>${this.l.t("reject")}</button>
+          </div>`
+        : nothing}
+    `;
+  }
+
   protected renderContent(snapshot: Snapshot) {
     if (!snapshot.proposals.length) {
       return html`<p class="muted">${this.l.t("proposals_empty")}</p>`;
@@ -227,10 +318,23 @@ export class QuartermasterProposalsCard extends QuartermasterCard {
       const zone = proposal.zone_id
         ? this.zoneName(proposal.zone_id)
         : this.l.t("proposal_unknown_zone");
+      const camera = proposal.channel === "camera";
       const title =
         proposal.kind === "purchase"
           ? this.l.t("proposal_purchase", { time })
-          : this.l.t("proposal_from", { zone, time });
+          : this.l.t(camera ? "proposal_camera" : "proposal_from", { zone, time });
+      if (proposal.kind === "movement" && proposal.items.length) {
+        return html`<section data-proposal=${proposal.proposal_id}>
+          <h3>${title}</h3>
+          ${this.renderMovement(proposal, proposal.items[0])}
+        </section>`;
+      }
+      if (camera && proposal.items.every((item) => item.proposed === null)) {
+        return html`<section data-proposal=${proposal.proposal_id}>
+          <h3>${title}</h3>
+          ${this.renderUnclear(proposal)}
+        </section>`;
+      }
       const image = proposal.has_image
         ? this.image({ proposal_id: proposal.proposal_id }, "")
         : undefined;

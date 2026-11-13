@@ -180,12 +180,15 @@ export interface ProposalItem {
   product: string | null;
   seen_as: string;
   current: number | null;
-  proposed: number;
+  /** Null for a camera sighting nobody can confirm (unknown or unclear). */
+  proposed: number | null;
   unit: string | null;
   confidence: number;
   notes?: string | null;
   /** A recorded product the picture did not show, proposed at zero. */
   missing?: boolean;
+  /** Movement requests: the quantity a camera saw taken or put back. */
+  moved?: number;
 }
 
 export interface Proposal {
