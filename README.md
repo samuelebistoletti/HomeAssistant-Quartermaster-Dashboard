@@ -165,6 +165,7 @@ npm run lint     # ESLint and type check with tsc (TypeScript 7)
 npm test         # Web Test Runner in Chrome
 npm run build    # Rollup -> dist/quartermaster-dashboard.js (commit it)
 npm run watch    # rebuild on every change
+npm run contract # refresh the snapshot contract from the integration
 ```
 
 `dist/` is committed: it is the Marketplace file and the release asset, and CI fails when it does not match the sources.
@@ -185,6 +186,8 @@ TypeScript 7 ships no compiler API yet. As its announcement recommends, `tsc` is
 | `tests/` | Web Test Runner tests with fixtures |
 
 ### Trying it with Home Assistant
+
+The snapshot contract: `tests/contract.generated.ts` holds the integration's sample snapshot (`tests/snapshot_sample.json` there) with `satisfies Snapshot`, so `npm run lint` fails when `src/types.ts` no longer matches what the integration sends. CI compares it with the integration's `main` (`npm run contract -- --main --check`). After a change in the integration, run `npm run contract` with both repositories side by side, fix `src/types.ts` and commit.
 
 Clone this repository next to [HomeAssistant-Quartermaster](https://github.com/samuelebistoletti/HomeAssistant-Quartermaster). Its development Home Assistant (Docker) loads `dist/` from here: run `npm run build` and reload the browser. Setup, including on another computer, is in its [CONTRIBUTING.md](https://github.com/samuelebistoletti/HomeAssistant-Quartermaster/blob/main/CONTRIBUTING.md).
 

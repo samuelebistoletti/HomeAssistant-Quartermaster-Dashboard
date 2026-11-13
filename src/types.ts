@@ -61,9 +61,14 @@ export type ZoneSource = { type: SourceType | string } & Record<string, unknown>
 
 export interface ZoneCheck {
   ts: string;
+  zone_id?: string;
   status: "updated" | "photo_requested" | "list_sent" | "failed" | string;
   reason?: string | null;
+  /** The source that gave the result, such as "camera" or "photo". */
+  source?: string | null;
   overall_confidence?: number | null;
+  /** Result fields of the check, which depend on how it ended. */
+  [extra: string]: unknown;
 }
 
 export interface LastShow {

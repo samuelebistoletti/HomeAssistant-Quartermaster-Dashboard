@@ -20,6 +20,7 @@ npm ci            # also enables the pre-commit hook (lint, type check, dist che
 npm run lint      # ESLint (typescript-eslint strict) + tsc --noEmit
 npm test          # Web Test Runner in Chrome
 npm run build     # Rollup -> dist/quartermaster-dashboard.js, committed
+npm run contract  # tests/contract.generated.ts from the integration's sample snapshot
 ```
 
 Try a change in a real Home Assistant on the integration's dev instance: it loads this repository's `dist/` (see its `CONTRIBUTING.md`); build, then reload the browser.
