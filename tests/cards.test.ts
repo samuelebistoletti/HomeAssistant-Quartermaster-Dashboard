@@ -312,6 +312,8 @@ describe("inventory card", () => {
       { product: "1", operation: "purchase", quantity: 1, zone: "fridge" },
       { product: "1", operation: "consume", quantity: 1, zone: "fridge" },
     ]);
+    // Journaled actions say they come from the dashboard.
+    expect(stub.calls.channels).to.deep.equal(["dashboard", "dashboard"]);
   });
 
   it("groups by zone without a zone", async () => {
@@ -342,6 +344,8 @@ describe("inventory card", () => {
       ["add_product", { name: "Riso", essential: false, default_zone: "pantry" }],
       ["set_stock", { product: "Riso", quantity: 2, zone: "pantry" }],
     ]);
+    // add_product writes no journal entry, so it carries no channel.
+    expect(stub.calls.channels).to.deep.equal([undefined, "dashboard"]);
   });
 
   it("is read-only for users who cannot write", async () => {

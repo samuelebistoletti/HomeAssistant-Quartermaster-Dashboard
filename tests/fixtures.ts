@@ -187,7 +187,10 @@ export const sampleJournal: JournalEntry[] = [
 ];
 
 export interface StubCalls {
+  /** Action calls; their `channel` is kept apart, in `channels`. */
   services: { domain: string; service: string; data: Record<string, unknown> }[];
+  /** The `channel` of each action call, in the same order (`undefined` when not sent). */
+  channels: unknown[];
   ws: Record<string, unknown>[];
   subscribed: number;
   unsubscribed: number;
@@ -210,7 +213,7 @@ export function stubHass(
     ws?: (message: Record<string, unknown>) => unknown;
   } = {},
 ): Stub {
-  const calls: StubCalls = { services: [], ws: [], subscribed: 0, unsubscribed: 0 };
+  const calls: StubCalls = { services: [], channels: [], ws: [], subscribed: 0, unsubscribed: 0 };
   const callbacks = new Set<(snapshot: Snapshot) => void>();
   const snapshot = options.snapshot ?? sampleSnapshot();
   const hass = {
@@ -233,7 +236,9 @@ export function stubHass(
       return snapshot as T;
     },
     async callService(domain: string, service: string, data: Record<string, unknown> = {}) {
-      calls.services.push({ domain, service, data });
+      const { channel, ...rest } = data;
+      calls.services.push({ domain, service, data: rest });
+      calls.channels.push(channel);
       if (options.serviceError) {
         throw options.serviceError;
       }

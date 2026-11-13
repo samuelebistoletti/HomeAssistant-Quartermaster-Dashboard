@@ -40,6 +40,16 @@ declare global {
   }
 }
 
+/** Actions that write the journal: the cards record them as the dashboard's. */
+export const JOURNALED_ACTIONS: ReadonlySet<string> = new Set([
+  "adjust_stock",
+  "set_stock",
+  "archive_product",
+  "move_stock",
+  "confirm_pending",
+  "undo_last",
+]);
+
 export const DOCUMENTATION_URL =
   "https://github.com/samuelebistoletti/HomeAssistant-Quartermaster-Dashboard";
 
@@ -200,7 +210,11 @@ export abstract class QuartermasterCard extends LitElement {
     this.busy = true;
     this.notice = undefined;
     try {
-      await this.hass.callService(DOMAIN, service, data);
+      await this.hass.callService(
+        DOMAIN,
+        service,
+        JOURNALED_ACTIONS.has(service) ? { ...data, channel: "dashboard" } : data,
+      );
       if (success) {
         this.notice = { text: success, error: false };
       }
