@@ -29,7 +29,7 @@
     "@types/mocha": "10.0.10",
     "@typescript/native": "npm:typescript@7.0.2",
     "@web/dev-server-esbuild": "2.0.0",
-    "@web/test-runner": "1.0.0",
+    "@web/test-runner": "1.0.1",
     "eslint": "10.14.0",
     "globals": "17.14.0",
     "rollup": "4.68.0",
