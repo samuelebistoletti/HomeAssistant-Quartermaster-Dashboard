@@ -31,7 +31,7 @@ Dashboard strategy and cards for the [Quartermaster](https://github.com/samueleb
 
 ## Requirements
 
-- Home Assistant 2026.11.0, the latest release. Older releases are not supported.
+- Home Assistant 2026.11.2, the latest release. Older releases are not supported.
 - The [Quartermaster](https://github.com/samuelebistoletti/HomeAssistant-Quartermaster) integration, set up, with dashboard API version 1. Without it, or with an integration that is not set up or too old, the dashboard shows a message saying what to do.
 
 ## Installation
@@ -147,7 +147,7 @@ Before a photo is sent, the browser turns it upright, resizes it to 1280 px on t
 
 | Quartermaster Dashboard | Quartermaster | Home Assistant |
 | --- | --- | --- |
-| unreleased | unreleased (dashboard API 1) | 2026.11.0 |
+| unreleased | unreleased (dashboard API 1) | 2026.11.2 |
 
 The dashboard talks to the integration through its dashboard API, version 1, described in the integration's [docs/dashboard-api.md](https://github.com/samuelebistoletti/HomeAssistant-Quartermaster/blob/main/docs/dashboard-api.md). Release both together.
 
